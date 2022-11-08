@@ -22,6 +22,9 @@ class PollResult
     /** @var int */
     private $employeeFloor;
 
+    /** @var int */
+    private $time;
+
     /**
      * PollResult constructor.
      * @param int $id
@@ -29,14 +32,16 @@ class PollResult
      * @param Employee $employee
      * @param Dish $dish
      * @param int $employeeFloor
+     * @param int $ts
      */
-    public function __construct(int $id, Poll $poll, Employee $employee, Dish $dish, int $employeeFloor)
+    public function __construct(int $id, Poll $poll, Employee $employee, Dish $dish, int $employeeFloor, int $ts = 0)
     {
         $this->id = $id;
         $this->poll = $poll;
         $this->employee = $employee;
         $this->dish = $dish;
         $this->employeeFloor = $employeeFloor;
+        $this->time = ($ts > 0) ? $ts : time();
     }
 
     /**
@@ -77,5 +82,13 @@ class PollResult
     public function getEmployeeFloor(): int
     {
         return $this->employeeFloor;
+    }
+
+    /**
+     * @return int
+     */
+    public function getTime(): int
+    {
+        return $this->time;
     }
 }
