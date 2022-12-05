@@ -38,6 +38,14 @@ class EmployeeSubmitsPollResultTest extends FunctionalTestCase
         verify($poll)->equals($poll);
     }
 
+    public function testPollIsNotActive()
+    {
+        $this->expectException(PollIsNotActiveException::class);
+
+        $poll = $this->performTestMethod($this->getEmployeeWithPermissions(), $this->getPollResult(true, false));
+        verify($poll)->equals($poll);
+    }
+
     private function performTestMethod(Employee $employee, PollResult $pollResult): PollResult
     {
         $this->getContainer()->get(FakeEmployeeProvider::class)->setEmployee($employee);
@@ -112,9 +120,9 @@ class EmployeeSubmitsPollResultTest extends FunctionalTestCase
         );
     }
 
-    private function getPollResult(bool $valid): PollResult
+    private function getPollResult(bool $valid, bool $active = true): PollResult
     {
-	$poll = $this->getPoll(true);
+	$poll = $this->getPoll($active);
         $employee = $this->getEmployeeWithPermissions();
         return new PollResult(
 	    1,
