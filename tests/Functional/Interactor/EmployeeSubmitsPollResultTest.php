@@ -4,6 +4,8 @@ namespace tests\Meals\Functional\Interactor;
 
 use Meals\Application\Component\Validator\Exception\AccessDeniedException;
 use Meals\Application\Component\Validator\Exception\PollResultIsNotValidException;
+use Meals\Application\Component\Validator\Exception\PollIsClosedException;
+use Meals\Application\Component\Validator\Exception\PollIsNotActiveException;
 use Meals\Application\Feature\Poll\UseCase\EmployeeSubmitsPollResult\Interactor;
 use Meals\Domain\Dish\DishList;
 use Meals\Domain\Employee\Employee;
@@ -15,6 +17,7 @@ use Meals\Domain\User\Permission\Permission;
 use Meals\Domain\User\Permission\PermissionList;
 use Meals\Domain\User\User;
 use tests\Meals\Functional\Fake\Provider\FakeEmployeeProvider;
+use tests\Meals\Functional\Fake\Provider\FakeDishProvider;
 use tests\Meals\Functional\Fake\Provider\FakePollProvider;
 use tests\Meals\Functional\Fake\Provider\FakePollResultProvider;
 use tests\Meals\Functional\FunctionalTestCase;
@@ -27,9 +30,9 @@ class EmployeeSubmitsPollResultTest extends FunctionalTestCase
         verify($poll)->equals($poll);
     }
 
-    public function testPollResultIsNotValid()
+    public function testPollIsClosed()
     {
-        $this->expectException(PollResultIsNotValidException::class);
+        $this->expectException(PollIsClosedException::class);
 
         $poll = $this->performTestMethod($this->getEmployeeWithPermissions(), $this->getPollResult(false));
         verify($poll)->equals($poll);
@@ -38,9 +41,22 @@ class EmployeeSubmitsPollResultTest extends FunctionalTestCase
     private function performTestMethod(Employee $employee, PollResult $pollResult): PollResult
     {
         $this->getContainer()->get(FakeEmployeeProvider::class)->setEmployee($employee);
-        $this->getContainer()->get(FakePollResultProvider::class)->setPollResult($pollResult);
+	$this->getContainer()->get(FakePollResultProvider::class)->setPollResult($pollResult);
 
-        return $this->getContainer()->get(Interactor::class)->getPollResult($employee->getId(), $pollResult->getId());
+	$poll = $pollResult->getPoll();
+	$this->getContainer()->get(FakePollProvider::class)->setPoll($poll);
+
+	$dish = $pollResult->getDish();
+        $this->getContainer()->get(FakeDishProvider::class)->setDish($dish);
+
+        return $this->getContainer()->get(Interactor::class)->submitPollResult(
+		$pollResult->getId(),
+                $poll->getId(), 
+		$employee->getId(),
+		$dish->getId(),
+		$pollResult->getEmployeeFloor(),
+		$pollResult->getTime()
+	);
     }
 
     private function getEmployeeWithPermissions(): Employee
@@ -102,7 +118,7 @@ class EmployeeSubmitsPollResultTest extends FunctionalTestCase
         $employee = $this->getEmployeeWithPermissions();
         return new PollResult(
 	    1,
-	    $poll,
+            $poll,
             $employee,
 	    new Dish(
                 1,

@@ -9,10 +9,14 @@ class PollResultValidator
 {
     public function validate(PollResult $result): void
     {
-	# check submission for time constraints (Monday 6-22)
-	$date = getdate($result->getTime());
+        # Check poll results e.g. for time constraints (Monday 6-22)
+        $date = getdate($result->getTime());
         
-	if ($date["wday"] == "1" && $date["hours"] > 5 && $date["hours"] < 22 ) {
+	if ($date["wday"] == "1"
+	    && $date["hours"] > 5
+	    && $date["hours"] < 22 )
+	{
+	    return;
 	} else {
             throw new PollResultIsNotValidException();
         }
