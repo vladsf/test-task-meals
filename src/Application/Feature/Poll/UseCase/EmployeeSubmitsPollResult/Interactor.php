@@ -8,6 +8,7 @@ use Meals\Application\Component\Provider\PollProviderInterface;
 use Meals\Application\Component\Provider\DishProviderInterface;
 use Meals\Application\Component\Validator\PollResultValidator;
 use Meals\Application\Component\Validator\PollIsActiveValidator;
+use Meals\Application\Component\Validator\PollDateValidator;
 use Meals\Application\Component\Validator\UserHasAccessToViewPollsValidator;
 use Meals\Domain\Poll\Poll;
 use Meals\Domain\Poll\PollResult;
@@ -82,14 +83,14 @@ class Interactor
 
         $this->pollIsActiveValidator->validate($poll);
 
-	# Check if poll is open for user submissions (on Mondays 6-22)
-	$date = getdate(($ts > 0) ? $ts : time());
-        
-	if ($date["wday"] == "1" && $date["hours"] > 5 && $date["hours"] < 22 ) {
-            $pollResult = new PollResult($pollResultId, $poll, $employee, $dish, $employeeFloor, $ts);
-	} else {
+        $date = getdate(($ts > 0) ? $ts : time());
+
+        # Check if poll is open for user submissions (on Mondays 6-22)
+        if (!PollDateValidator::isValidDate($date)) {
             throw new PollIsClosedException();
         }
+
+        $pollResult = new PollResult($pollResultId, $poll, $employee, $dish, $employeeFloor, $ts);
 
         $this->pollResultValidator->validate($pollResult);
 
