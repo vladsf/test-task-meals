@@ -78,12 +78,4 @@ class PollResult
     {
         return $this->employeeFloor;
     }
-
-    /**
-     * @return int
-     */
-    public function getTime(): int
-    {
-        return $this->time;
-    }
 }
