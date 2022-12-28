@@ -3,7 +3,6 @@
 namespace tests\Meals\Functional\Interactor;
 
 use Meals\Application\Component\Validator\Exception\AccessDeniedException;
-use Meals\Application\Component\Validator\Exception\PollResultIsNotValidException;
 use Meals\Application\Component\Validator\Exception\PollIsNotOpenException;
 use Meals\Application\Component\Validator\Exception\PollIsNotActiveException;
 use Meals\Application\Feature\Poll\UseCase\EmployeeSubmitsPollResult\Interactor;
