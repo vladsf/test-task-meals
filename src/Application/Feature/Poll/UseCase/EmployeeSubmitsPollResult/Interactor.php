@@ -8,12 +8,11 @@ use Meals\Application\Component\Provider\PollProviderInterface;
 use Meals\Application\Component\Provider\DishProviderInterface;
 use Meals\Application\Component\Validator\PollResultValidator;
 use Meals\Application\Component\Validator\PollIsActiveValidator;
-use Meals\Application\Component\Validator\PollDateValidator;
+use Meals\Application\Component\Validator\PollIsOpenValidator;
 use Meals\Application\Component\Validator\UserHasAccessToViewPollsValidator;
 use Meals\Domain\Poll\Poll;
 use Meals\Domain\Poll\PollResult;
 use Meals\Domain\Dish\Dish;
-use Meals\Application\Component\Validator\Exception\PollIsClosedException;
 
 class Interactor
 {
@@ -29,14 +28,14 @@ class Interactor
     /** @var DishProviderInterface */
     private $dishProvider;
 
-    /** @var PollResultValidator */
-    private $pollResultValidator;
-
     /** @var UserHasAccessToViewPollsValidator */
     private $userHasAccessToPollsValidator;
 
     /** @var PollIsActiveValidator */
     private $pollIsActiveValidator;
+
+    /** @var PollIsOpenValidator */
+    private $pollIsOpenValidator;
 
     /**
      * Interactor constructor.
@@ -46,7 +45,7 @@ class Interactor
      * @param DishProviderInterface $dishProvider
      * @param UserHasAccessToViewPollsValidator $userHasAccessToPollsValidator
      * @param PollIsActiveValidator $pollIsActiveValidator
-     * @param PollResultValidator $pollResultValidator
+     * @param PollIsOpenValidator $pollIsOpenValidator
      */
     public function __construct(
         EmployeeProviderInterface $employeeProvider,
@@ -55,7 +54,7 @@ class Interactor
         DishProviderInterface $dishProvider,
         UserHasAccessToViewPollsValidator $userHasAccessToPollsValidator,
         PollIsActiveValidator $pollIsActiveValidator,
-        PollResultValidator $pollResultValidator
+        PollIsOpenValidator $pollIsOpenValidator
     ) {
         $this->employeeProvider = $employeeProvider;
         $this->pollProvider = $pollProvider;
@@ -63,7 +62,7 @@ class Interactor
         $this->dishProvider = $dishProvider;
         $this->userHasAccessToPollsValidator = $userHasAccessToPollsValidator;
         $this->pollIsActiveValidator = $pollIsActiveValidator;
-        $this->pollResultValidator = $pollResultValidator;
+        $this->pollIsOpenValidator = $pollIsOpenValidator;
     }
 
     public function getPollResult(int $pollResultId): PollResult
@@ -73,8 +72,9 @@ class Interactor
         return $pollResult;
     }
 
-    public function submitPollResult(int $pollResultId, int $pollId, int $employeeId, int $dishId, int $employeeFloor, int $ts = 0): PollResult
+    public function submitPollResult(int $pollResultId, int $pollId, int $employeeId, int $dishId, int $employeeFloor, string $datetime = 'now'): PollResult
     {
+        $date = new \DateTime($datetime);
         $employee = $this->employeeProvider->getEmployee($employeeId);
         $poll = $this->pollProvider->getPoll($pollId);
         $dish = $this->dishProvider->getDish($dishId);
@@ -83,16 +83,9 @@ class Interactor
 
         $this->pollIsActiveValidator->validate($poll);
 
-        $date = getdate(($ts > 0) ? $ts : time());
+        $this->pollIsOpenValidator->validate($date);
 
-        # Check if poll is open for user submissions (on Mondays 6-22)
-        if (!PollDateValidator::isValidDate($date)) {
-            throw new PollIsClosedException();
-        }
-
-        $pollResult = new PollResult($pollResultId, $poll, $employee, $dish, $employeeFloor, $ts);
-
-        $this->pollResultValidator->validate($pollResult);
+        $pollResult = new PollResult($pollResultId, $poll, $employee, $dish, $employeeFloor);
 
         return $pollResult;
    
